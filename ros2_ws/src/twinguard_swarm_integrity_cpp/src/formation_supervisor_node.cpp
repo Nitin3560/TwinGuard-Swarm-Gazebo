@@ -38,9 +38,17 @@ public:
     nominal_yaw_ = declare_parameter<double>("nominal_yaw_rad", 0.0);
     nominal_velocity_limit_ = declare_parameter<double>("nominal_velocity_limit_mps", 3.0);
     degraded_threshold_ = declare_parameter<double>("degraded_threshold", 0.5);
+    min_authority_scale_ = declare_parameter<double>("min_authority_scale", 0.15);
     stale_timeout_ms_ = declare_parameter<int>("stale_timeout_ms", 500);
     auto_arm_ = declare_parameter<bool>("auto_arm", false);
     force_arm_ = declare_parameter<bool>("force_arm", false);
+    mission_params_.mode = declare_parameter<std::string>("mission_mode", "hold");
+    mission_params_.radius_m = declare_parameter<double>("mission_radius_m", 0.0);
+    mission_params_.period_s = declare_parameter<double>("mission_period_s", 18.0);
+    mission_params_.center_x = declare_parameter<double>("center_x_m", nominal_setpoint_[0]);
+    mission_params_.center_y = declare_parameter<double>("center_y_m", nominal_setpoint_[1]);
+    mission_params_.altitude_m = std::abs(nominal_setpoint_[2]);
+    start_time_ = get_clock()->now();
 
     supervisor_ = OffboardSupervisor(nominal_velocity_limit_, degraded_threshold_);
 
@@ -105,7 +113,7 @@ private:
   {
     trust_ = std::clamp(msg.point.x, 0.0, 1.0);
     residual_ = std::max(0.0, msg.point.y);
-    authority_scale_ = std::clamp(msg.point.z, 0.0, 1.0);
+    authority_scale_ = std::clamp(msg.point.z, min_authority_scale_, 1.0);
 
     if (trust_ < 0.35 && residual_ > 1.0) {
       fault_label_ = "suspected_attack";
@@ -145,12 +153,21 @@ private:
     const std::array<double, 3> current = odometry_stale ? nominal_setpoint_ : current_position_;
     const std::string fault = odometry_stale ? "suspected_attack" : fault_label_;
     const double authority = odometry_stale ? 0.15 : authority_scale_;
+    std::array<double, 3> nominal = nominal_setpoint_;
+    double yaw = nominal_yaw_;
+
+    if (mission_params_.mode == "circle") {
+      const double elapsed_s = (now - start_time_).seconds();
+      nominal = circle_mission_setpoint(mission_params_, elapsed_s, authority);
+      yaw = circle_mission_yaw(mission_params_, elapsed_s, authority);
+    }
+
     const SetpointCommand command = supervisor_.step(
       authority,
       fault,
       current,
-      nominal_setpoint_,
-      nominal_yaw_);
+      nominal,
+      yaw);
 
     publish_offboard_mode(timestamp);
     publish_setpoint(timestamp, command);
@@ -284,6 +301,7 @@ private:
   double nominal_yaw_{0.0};
   double nominal_velocity_limit_{3.0};
   double degraded_threshold_{0.5};
+  double min_authority_scale_{0.15};
   double trust_{1.0};
   double residual_{0.0};
   double authority_scale_{1.0};
@@ -295,6 +313,8 @@ private:
   std::string fault_label_{"nominal"};
   std::array<double, 3> nominal_setpoint_{0.0, 0.0, -2.0};
   std::array<double, 3> current_position_{0.0, 0.0, 0.0};
+  CircleMissionParams mission_params_;
+  rclcpp::Time start_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_odometry_time_{0, 0, RCL_ROS_TIME};
   OffboardSupervisor supervisor_;
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr trust_sub_;

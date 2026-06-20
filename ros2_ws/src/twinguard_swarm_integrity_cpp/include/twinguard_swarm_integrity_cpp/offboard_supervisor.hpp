@@ -16,6 +16,16 @@ struct SetpointCommand
   bool hold{false};
 };
 
+struct CircleMissionParams
+{
+  double center_x{0.0};
+  double center_y{0.0};
+  double altitude_m{2.0};
+  double radius_m{3.0};
+  double period_s{18.0};
+  std::string mode{"circle"};
+};
+
 class OffboardSupervisor
 {
 public:
@@ -37,5 +47,15 @@ private:
 };
 
 const char * to_string(SupervisorMode mode);
+
+std::array<double, 3> circle_mission_setpoint(
+  const CircleMissionParams & params,
+  double elapsed_s,
+  double authority_scale);
+
+double circle_mission_yaw(
+  const CircleMissionParams & params,
+  double elapsed_s,
+  double authority_scale);
 
 }  // namespace twinguard::offboard

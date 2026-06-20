@@ -29,6 +29,10 @@ Current implemented binding:
 ```text
 /drone_0/fmu/out/vehicle_odometry -> integrity_node_cpp
 /drone_0/fmu/out/vehicle_odometry -> formation_supervisor_node
+/twinguard/replay/vehicle_odometry -> integrity_node_cpp
+/twinguard/replay/vehicle_odometry -> formation_supervisor_node
+/drone_2/twinguard/replay/vehicle_odometry -> integrity_node_cpp
+/drone_2/twinguard/replay/vehicle_odometry -> formation_supervisor_node
 ```
 
 ## Commands To PX4
@@ -53,6 +57,15 @@ Current implemented binding:
 /drone_0/fmu/in/offboard_control_mode -> formation_supervisor_node
 /drone_0/fmu/in/trajectory_setpoint   -> formation_supervisor_node
 /drone_0/fmu/in/vehicle_command       -> formation_supervisor_node
+/fmu/in/offboard_control_mode         -> formation_supervisor_node
+/fmu/in/trajectory_setpoint           -> formation_supervisor_node
+/fmu/in/vehicle_command               -> formation_supervisor_node
+/px4_1/fmu/in/offboard_control_mode   -> formation_supervisor_node
+/px4_1/fmu/in/trajectory_setpoint     -> formation_supervisor_node
+/px4_1/fmu/in/vehicle_command         -> formation_supervisor_node
+/px4_2/fmu/in/offboard_control_mode   -> formation_supervisor_node
+/px4_2/fmu/in/trajectory_setpoint     -> formation_supervisor_node
+/px4_2/fmu/in/vehicle_command         -> formation_supervisor_node
 ```
 
 ## TwinGuard Diagnostics

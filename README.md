@@ -88,14 +88,14 @@ Implemented and planned nodes/packages:
 
 - `twinguard_swarm_integrity_cpp`: C++ package for digital-twin integrity scoring, trust, fault labels, and authority scaling.
 - `integrity_node_cpp`: C++ ROS 2 node that subscribes to PX4 `VehicleOdometry`, predicts expected state, and publishes residual/trust diagnostics.
-- `formation_supervisor_node`: C++ ROS 2 node that subscribes to TwinGuard trust/diagnostics and PX4 odometry, then publishes trust-gated `OffboardControlMode`, `TrajectorySetpoint`, and `VehicleCommand` messages.
+- `formation_supervisor_node`: C++ ROS 2 node that subscribes to TwinGuard trust/diagnostics and PX4 odometry, generates static-hold or circular mission setpoints, then publishes trust-gated `OffboardControlMode`, `TrajectorySetpoint`, and `VehicleCommand` messages.
 - `dataset_replay_node`: Python ROS 2 bridge that applies a real dataset degradation profile to live PX4 odometry for validation and recording.
-- `offboard_mission_controller`: Python ROS 2 PX4 offboard controller used for repeatable replay/demo mission flight.
 - `digital_twin_node`: predicts per-UAV expected state.
 - `attack_injector`: injects reproducible sensor/communication faults.
 - `experiment_logger`: records CSV and rosbag2 outputs.
 
 The ROS 2 package skeleton is located under [ros2_ws/src](ros2_ws/src). The latency-sensitive integrity/scoring and trust-gated offboard-supervision paths are implemented in C++; Python is reserved for launch-time orchestration, experiment tooling, dataset replay, and mission-control prototyping.
+A single trust-gated supervisor (`formation_supervisor_node`) handles both static-hold and circular-mission modes, validated against both live PX4 SITL odometry and real-dataset-replay-perturbed odometry.
 
 ## Single-UAV PX4 Validation Run
 
@@ -130,7 +130,7 @@ ros2 launch twinguard_swarm_bringup twinguard_single_uav_replay_mission.launch.p
   takeoff_altitude_m:=2.0
 ```
 
-The real dataset is used as a replayed degradation profile for sensor/integrity validation. It does not replace the PX4 flight controller or directly define the UAV path. The offboard mission controller owns the flight trajectory; TwinGuard owns the integrity/trust response.
+The real dataset is used as a replayed degradation profile for sensor/integrity validation. It does not replace the PX4 flight controller or directly define the UAV path. The C++ `formation_supervisor_node` owns both the circular mission trajectory and the integrity-aware command response.
 
 ## Three-UAV Formation Validation Run
 
@@ -142,7 +142,7 @@ Drone 1: nominal formation follower
 Drone 2: dataset-degraded UAV with TwinGuard replay/integrity scoring
 ```
 
-The formation uses three synchronized offboard mission controllers with fixed spatial offsets. Drone 2 receives the real dataset replay on its integrity path so the video shows a visible swarm mission while the diagnostics show degradation, residual growth, and trust response for the affected vehicle.
+The formation uses three synchronized C++ formation supervisors with fixed spatial offsets. Drone 2 receives the real dataset replay on its integrity path so the video shows a visible swarm mission while the diagnostics show degradation, residual growth, and trust response for the affected vehicle.
 
 Start a three-vehicle PX4/Gazebo run using the multi-vehicle launch method supported by your PX4 checkout. Then confirm the generated ROS 2 odometry topics:
 
@@ -205,7 +205,7 @@ Official references:
 
 ## Implementation Status
 
-This repository defines the ROS 2 package structure, autonomy-layer interfaces, topic contract, setup plan, C++ integrity-scoring package, C++ trust-gated formation supervisor, real dataset replay bridge, and an initial PX4 offboard mission controller. The current Phase 1 path closes the loop from PX4 odometry to C++ trust scoring to C++ offboard command publication: nominal trust passes the mission setpoint through, degraded trust scales authority, and suspected attack holds current position. The next engineering milestone is to extend this single-agent supervisor into multi-agent formation geometry and planner-assurance logic.
+This repository defines the ROS 2 package structure, autonomy-layer interfaces, topic contract, setup plan, C++ integrity-scoring package, C++ trust-gated formation supervisor, and real dataset replay bridge. The current Phase 1 path closes the loop from PX4 odometry to C++ trust scoring to C++ offboard command publication: nominal trust passes the mission setpoint through, degraded trust scales authority, and suspected attack holds current position. The C++ supervisor also owns the repeatable circular mission used by the single- and three-UAV validation launches. The next engineering milestone is to extend this into explicit planner-assurance logic.
 
 ## Intended Outcome
 

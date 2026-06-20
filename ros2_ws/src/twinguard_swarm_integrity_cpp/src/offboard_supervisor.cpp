@@ -2,9 +2,17 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cmath>
 
 namespace twinguard::offboard
 {
+
+namespace
+{
+
+constexpr double kPi = 3.14159265358979323846;
+
+}  // namespace
 
 OffboardSupervisor::OffboardSupervisor(double nominal_velocity_limit, double degraded_threshold)
 : nominal_velocity_limit_(nominal_velocity_limit),
@@ -63,6 +71,35 @@ const char * to_string(SupervisorMode mode)
       return "recovering";
   }
   return "unknown";
+}
+
+std::array<double, 3> circle_mission_setpoint(
+  const CircleMissionParams & params,
+  double elapsed_s,
+  double authority_scale)
+{
+  if (params.mode == "hold") {
+    return {params.center_x, params.center_y, -params.altitude_m};
+  }
+
+  const double radius = params.radius_m * std::clamp(authority_scale, 0.0, 1.0);
+  const double phase = 2.0 * kPi * elapsed_s / std::max(params.period_s, 1.0);
+  const double x = params.center_x + radius * std::cos(phase);
+  const double y = params.center_y + radius * std::sin(phase);
+  return {x, y, -params.altitude_m};
+}
+
+double circle_mission_yaw(
+  const CircleMissionParams & params,
+  double elapsed_s,
+  double authority_scale)
+{
+  if (params.mode == "hold") {
+    return 0.0;
+  }
+
+  const auto position = circle_mission_setpoint(params, elapsed_s, authority_scale);
+  return std::atan2(position[1] - params.center_y, position[0] - params.center_x) + kPi / 2.0;
 }
 
 }  // namespace twinguard::offboard

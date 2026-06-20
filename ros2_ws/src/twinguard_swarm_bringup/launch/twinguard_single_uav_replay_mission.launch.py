@@ -1,6 +1,6 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 
@@ -11,6 +11,7 @@ def generate_launch_description():
     replay_rate_hz = LaunchConfiguration("replay_rate_hz")
     mission_radius_m = LaunchConfiguration("mission_radius_m")
     takeoff_altitude_m = LaunchConfiguration("takeoff_altitude_m")
+    nominal_z_m = PythonExpression(["-", takeoff_altitude_m])
 
     return LaunchDescription(
         [
@@ -62,25 +63,34 @@ def generate_launch_description():
                 ],
             ),
             Node(
-                package="twinguard_swarm_integrity",
-                executable="offboard_mission_controller",
-                name="offboard_mission_controller",
+                package="twinguard_swarm_integrity_cpp",
+                executable="formation_supervisor_node",
+                name="formation_supervisor_node",
                 namespace="twinguard",
                 output="screen",
                 parameters=[
                     {
                         "drone_id": 0,
-                        "px4_prefix": "",
-                        "trust_topic": "/twinguard/trust_state",
-                        "takeoff_altitude_m": takeoff_altitude_m,
+                        "target_system": 1,
+                        "nominal_z_m": nominal_z_m,
                         "mission_radius_m": mission_radius_m,
                         "mission_period_s": 18.0,
                         "min_authority_scale": 0.25,
+                        "nominal_velocity_limit_mps": 3.0,
+                        "degraded_threshold": 0.5,
                         "setpoint_rate_hz": 20.0,
                         "auto_arm": True,
                         "force_arm": True,
                         "mission_mode": "circle",
                     }
+                ],
+                remappings=[
+                    ("fmu/out/vehicle_odometry", "/twinguard/replay/vehicle_odometry"),
+                    ("fmu/in/offboard_control_mode", "/fmu/in/offboard_control_mode"),
+                    ("fmu/in/trajectory_setpoint", "/fmu/in/trajectory_setpoint"),
+                    ("fmu/in/vehicle_command", "/fmu/in/vehicle_command"),
+                    ("trust_state", "/twinguard/trust_state"),
+                    ("integrity_diagnostics", "/twinguard/integrity_diagnostics"),
                 ],
             ),
         ]
