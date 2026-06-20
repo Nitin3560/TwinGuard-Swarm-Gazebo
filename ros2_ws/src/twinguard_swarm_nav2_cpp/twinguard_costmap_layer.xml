@@ -1,0 +1,5 @@
+<library path="twinguard_nav2_cpp">
+  <class type="twinguard::nav2_integration::TwinGuardIntegrityLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>Inflates planning conservatism around the robot's own position based on TwinGuard localization trust.</description>
+  </class>
+</library>

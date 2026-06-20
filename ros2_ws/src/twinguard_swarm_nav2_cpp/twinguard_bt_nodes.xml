@@ -1,0 +1,5 @@
+<library path="twinguard_bt_nodes">
+  <class type="twinguard::nav2_integration::IsAgentTrustworthy" base_class_type="BT::ConditionNode">
+    <description>Fails closed unless TwinGuard authority_scale is above the configured threshold.</description>
+  </class>
+</library>

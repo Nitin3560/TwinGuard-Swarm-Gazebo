@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>twinguard_swarm_nav2_cpp</name>
+  <version>0.1.0</version>
+  <description>Nav2 BT condition node and costmap layer exposing TwinGuard trust and integrity signals.</description>
+  <maintainer email="nitin@example.com">Nitin</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>behaviortree_cpp_v3</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_behavior_tree</depend>
+  <depend>pluginlib</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <nav2_costmap_2d plugin="${prefix}/twinguard_costmap_layer.xml" />
+  </export>
+</package>

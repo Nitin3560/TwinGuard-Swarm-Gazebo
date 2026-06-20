@@ -14,6 +14,7 @@ The project is designed to support repeatable experiments where a UAV swarm perf
 - BehaviorTree.CPP mission supervision for hold, reroute, and nominal flight branches
 - Local A* replanning over a coarse static 3D voxel grid for known no-fly volumes
 - Optional EKF-based multi-source estimator fusing PX4 odometry with sparse optical-flow visual odometry
+- Nav2-facing BT condition and costmap layer plugins for trust-aware navigation integration
 - Multi-UAV formation supervision
 - Per-agent digital twin prediction
 - Residual and normalized-innovation-based anomaly scoring
@@ -66,6 +67,7 @@ TwinGuard-Swarm-Gazebo/
 │       ├── twinguard_swarm_bringup/
 │       ├── twinguard_dataset_replay/
 │       ├── twinguard_swarm_estimation_cpp/
+│       ├── twinguard_swarm_nav2_cpp/
 │       ├── twinguard_swarm_planning_cpp/
 │       ├── twinguard_swarm_integrity_cpp/
 │       └── twinguard_swarm_integrity/
@@ -97,6 +99,9 @@ Implemented and planned nodes/packages:
 - `twinguard_swarm_estimation_cpp`: C++ package with a 6-state EKF, sparse optical-flow visual odometry, and an opt-in EKF integrity node.
 - `ekf_integrity_node`: alternative integrity node that fuses PX4 position updates and quality-scored visual-odometry velocity updates, then publishes the same `trust_state` contract consumed by the supervisor.
 - `visual_odometry_node`: converts bridged Gazebo camera/depth images into per-feature-depth-scaled optical-flow velocity estimates plus atomic quality/velocity diagnostics.
+- `twinguard_swarm_nav2_cpp`: Nav2-facing plugin package with a BT condition node and a costmap layer that consume TwinGuard trust.
+- `IsAgentTrustworthy`: Nav2 BT condition plugin that fails closed unless `authority_scale` from `trust_state` is above the configured threshold.
+- `TwinGuardIntegrityLayer`: Nav2 costmap layer plugin that encodes localization self-trust as planning conservatism around the robot's own position, distinct from obstacle or sensor layers.
 - `twinguard_swarm_planning_cpp`: C++ package with BehaviorTree.CPP leaves and a pure A* local planner for static obstacle/no-fly-volume rerouting.
 - `dataset_replay_node`: Python ROS 2 bridge that applies a real dataset degradation profile to live PX4 odometry for validation and recording.
 - `digital_twin_node`: predicts per-UAV expected state.
@@ -108,6 +113,7 @@ A single trust-gated supervisor (`formation_supervisor_node`) handles both stati
 Phase 2 adds an explicit Behavior Tree above the offboard supervisor: suspected attacks publish a hold setpoint, blocked straight-line paths invoke A* rerouting around configured static obstacles, and otherwise the nominal mission setpoint is used. The final `OffboardSupervisor::step()` authority gate still decides whether to pass through, slow down, or hard-hold.
 The local A* planner is intentionally scoped to short-horizon rerouting: with the default 0.5 m cell size and 32-cell extent, it solves roughly 32 m start-to-goal spans per axis around the current query. Larger or unreachable local plans fall back to the nominal branch rather than being claimed as global planning.
 Phase 3 adds an opt-in EKF path through `twinguard_ekf_integrity.launch.py`: launch PX4 with `gz_x500_depth`, bridge Gazebo RGB/depth camera topics into ROS 2, estimate sparse optical-flow velocity using per-feature depth scaling, and fuse that velocity with PX4 odometry in a 6-state EKF. This is visual odometry and trust-aware sensor fusion, not SLAM or mapping.
+Phase 4 adds a narrow Nav2-facing interface through `twinguard_swarm_nav2_cpp`: a BT plugin that gates Nav2 behavior on TwinGuard trust, and a costmap layer that turns low localization integrity into local planning conservatism. Nav2's global planners, local controllers, obstacle layers, and recovery behaviors remain Nav2's own implementations.
 
 ## Single-UAV PX4 Validation Run
 
@@ -217,7 +223,7 @@ Official references:
 
 ## Implementation Status
 
-This repository defines the ROS 2 package structure, autonomy-layer interfaces, topic contract, setup plan, C++ integrity-scoring package, C++ trust-gated formation supervisor, BehaviorTree.CPP mission selection, local A* rerouting, EKF/visual-odometry estimation path, and real dataset replay bridge. The current default path closes the loop from PX4 odometry to C++ trust scoring to BT-guided setpoint selection to C++ offboard command publication. The opt-in Phase 3 launch swaps in `ekf_integrity_node`, which fuses PX4 position with sparse optical-flow visual-odometry velocity while preserving the same `trust_state` interface. Trajectory-risk monitoring is stubbed as a no-op `TrajectoryClear` BT condition until a shared multi-agent trajectory-intent topic is added.
+This repository defines the ROS 2 package structure, autonomy-layer interfaces, topic contract, setup plan, C++ integrity-scoring package, C++ trust-gated formation supervisor, BehaviorTree.CPP mission selection, local A* rerouting, EKF/visual-odometry estimation path, Nav2-facing trust plugins, and real dataset replay bridge. The current default path closes the loop from PX4 odometry to C++ trust scoring to BT-guided setpoint selection to C++ offboard command publication. The opt-in Phase 3 launch swaps in `ekf_integrity_node`, which fuses PX4 position with sparse optical-flow visual-odometry velocity while preserving the same `trust_state` interface. The Phase 4 Nav2 package exposes that same trust contract to Nav2 without replacing Nav2 planners. Trajectory-risk monitoring is stubbed as a no-op `TrajectoryClear` BT condition until a shared multi-agent trajectory-intent topic is added.
 
 ## Intended Outcome
 

@@ -122,6 +122,16 @@ Current implemented binding:
 /drone_0/twinguard/supervisor_diagnostics <- formation_supervisor_node
 ```
 
+Nav2-facing read-only consumers:
+
+```text
+/drone_0/twinguard/trust_state -> IsAgentTrustworthy Nav2 BT condition plugin
+/drone_0/twinguard/trust_state -> TwinGuardIntegrityLayer Nav2 costmap layer plugin
+```
+
+Both Nav2 plugins consume the existing `geometry_msgs/msg/PointStamped` contract where
+`point.z` is `authority_scale`; they do not publish new TwinGuard topics.
+
 ## Logging Schema
 
 CSV columns:

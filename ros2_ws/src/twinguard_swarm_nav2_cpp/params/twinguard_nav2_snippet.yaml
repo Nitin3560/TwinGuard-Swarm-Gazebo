@@ -1,0 +1,26 @@
+# Example fragment to merge into a Nav2 params file.
+# This package exposes TwinGuard trust to Nav2; it does not replace Nav2 planners.
+
+bt_navigator:
+  ros__parameters:
+    plugin_lib_names:
+      - twinguard_bt_nodes
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      plugins: ["obstacle_layer", "twinguard_integrity_layer", "inflation_layer"]
+      twinguard_integrity_layer:
+        plugin: "twinguard::nav2_integration::TwinGuardIntegrityLayer"
+        trust_topic: "/drone_0/twinguard/trust_state"
+        inflation_radius_m: 1.5
+
+# Example BT XML usage:
+#
+# <Fallback name="trust_gated_navigate">
+#   <Sequence>
+#     <IsAgentTrustworthy trust_topic="/drone_0/twinguard/trust_state" authority_threshold="0.5"/>
+#     <NavigateToPose goal="{goal}"/>
+#   </Sequence>
+#   <Wait wait_duration="2.0"/>
+# </Fallback>
