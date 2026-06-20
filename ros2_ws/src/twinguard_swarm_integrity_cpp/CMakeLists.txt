@@ -62,6 +62,10 @@ ament_target_dependencies(formation_supervisor_node
   px4_msgs
   ament_index_cpp
   behaviortree_cpp_v3
+  # twinguard_swarm_planning_cpp exports twinguard_planning_core through
+  # ament_export_libraries/ament_export_targets. Keep this dependency here
+  # rather than target_link_libraries(twinguard_planning_core), since colcon
+  # builds packages in isolated CMake projects.
   twinguard_swarm_planning_cpp
 )
 

@@ -101,6 +101,7 @@ Implemented and planned nodes/packages:
 The ROS 2 package skeleton is located under [ros2_ws/src](ros2_ws/src). The latency-sensitive integrity/scoring and trust-gated offboard-supervision paths are implemented in C++; Python is reserved for launch-time orchestration, experiment tooling, dataset replay, and mission-control prototyping.
 A single trust-gated supervisor (`formation_supervisor_node`) handles both static-hold and circular-mission modes, validated against both live PX4 SITL odometry and real-dataset-replay-perturbed odometry.
 Phase 2 adds an explicit Behavior Tree above the offboard supervisor: suspected attacks publish a hold setpoint, blocked straight-line paths invoke A* rerouting around configured static obstacles, and otherwise the nominal mission setpoint is used. The final `OffboardSupervisor::step()` authority gate still decides whether to pass through, slow down, or hard-hold.
+The local A* planner is intentionally scoped to short-horizon rerouting: with the default 0.5 m cell size and 32-cell extent, it solves roughly 32 m start-to-goal spans per axis around the current query. Larger or unreachable local plans fall back to the nominal branch rather than being claimed as global planning.
 
 ## Single-UAV PX4 Validation Run
 
