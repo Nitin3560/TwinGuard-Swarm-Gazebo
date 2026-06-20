@@ -199,10 +199,14 @@ private:
       bt_blackboard_->set("obstacles", obstacles_);
       bt_blackboard_->set("computed_setpoint", mission);
       bt_blackboard_->set("computed_yaw", mission_yaw);
+      bt_blackboard_->set("planner_mode", std::string{"mission_fallback"});
       const BT::NodeStatus tree_status = bt_tree_->tickRoot();
       if (tree_status == BT::NodeStatus::SUCCESS) {
         nominal = bt_blackboard_->get<std::array<double, 3>>("computed_setpoint");
         yaw = bt_blackboard_->get<double>("computed_yaw");
+        planner_mode_ = bt_blackboard_->get<std::string>("planner_mode");
+      } else {
+        planner_mode_ = "mission_fallback";
       }
     }
 
@@ -322,6 +326,7 @@ private:
       kv("residual", std::to_string(residual_)),
       kv("authority_scale", std::to_string(authority_scale_)),
       kv("fault_label", fault_label_),
+      kv("planner_mode", planner_mode_),
       kv("hold", command.hold ? "true" : "false"),
       kv("velocity_limit_mps", std::to_string(command.velocity_limit)),
       kv("setpoint_x", std::to_string(command.position[0])),
@@ -355,6 +360,7 @@ private:
   bool offboard_requested_{false};
   bool arm_requested_{false};
   std::string fault_label_{"nominal"};
+  std::string planner_mode_{"mission_fallback"};
   std::array<double, 3> nominal_setpoint_{0.0, 0.0, -2.0};
   std::array<double, 3> current_position_{0.0, 0.0, 0.0};
   CircleMissionParams mission_params_;

@@ -82,6 +82,7 @@ public:
     }
     set_on_blackboard(*this, "computed_setpoint", current);
     set_on_blackboard(*this, "computed_yaw", 0.0);
+    set_on_blackboard(*this, "planner_mode", std::string{"attack_hold"});
     return BT::NodeStatus::SUCCESS;
   }
 };
@@ -168,6 +169,7 @@ public:
     const Point3 target = path.size() > 1 ? path[1] : path.front();
     set_on_blackboard(*this, "computed_setpoint", target);
     set_on_blackboard(*this, "computed_yaw", yaw_to_target(current, target, fallback_yaw));
+    set_on_blackboard(*this, "planner_mode", std::string{"astar_reroute"});
     return BT::NodeStatus::SUCCESS;
   }
 };
@@ -190,6 +192,7 @@ public:
     (void)get_from_blackboard(*this, "mission_yaw", yaw);
     set_on_blackboard(*this, "computed_setpoint", mission);
     set_on_blackboard(*this, "computed_yaw", yaw);
+    set_on_blackboard(*this, "planner_mode", std::string{"nominal_mission"});
     return BT::NodeStatus::SUCCESS;
   }
 };
